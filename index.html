@@ -223,7 +223,7 @@
           Y Position
           <output id="posVal">60 px below</output>
         </label>
-        <input id="pos" type="range" min="-180" max="180" value="60" />
+        <input id="pos" type="range" min="-240" max="200" value="60" />
       </div>
 
       <div class="control">
@@ -237,9 +237,9 @@
       <div class="control">
         <label for="tilt">
           Horizon Tilt Angle
-          <output id="tiltVal">-15°</output>
+          <output id="tiltVal">0°</output>
         </label>
-        <input id="tilt" type="range" min="-45" max="45" value="-15" />
+        <input id="tilt" type="range" min="-45" max="45" value="0" />
       </div>
 
       <div class="control">
@@ -247,7 +247,7 @@
           Box Scale
           <output id="widthVal">180 px</output>
         </label>
-        <input id="width" type="range" min="60" max="320" value="180" />
+        <input id="width" type="range" min="60" max="320" value="120" />
       </div>
 
       <div class="control" style="display:none;">
@@ -700,11 +700,11 @@
     resetButton.addEventListener("click", () => {
       pos.value = 60;
       rot.value = 0;
-      tilt.value = -15;
+      tilt.value = 0;
 
-      boxWidth.value = 180;
-      boxHeight.value = 180;
-      boxDepth.value = 55;
+      boxWidth.value = 120;
+      boxHeight.value = 120;
+      boxDepth.value = 30;
 
       update();
     });
