@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perspective Box Simulator</title>
+
+  <style>
+    :root {
+      --border: #d7dce3;
+      --text: #1f2937;
+      --muted: #64748b;
+      --accent: #ea580c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background: #eef2f7;
+    }
+
+    .app {
+      width: min(1300px, 98vw);
+      margin: 12px auto;
+      overflow: hidden;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 12px 16px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      margin: 0 0 3px;
+      font-size: 1.15rem;
+    }
+
+    .header-text p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.8rem;
+      border-radius: 5px;
+      transition: 0.2s ease;
+    }
+
+    .toggle-btn {
+      padding: 7px 12px;
+      color: var(--text);
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .toggle-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 14px 22px;
+      max-height: 300px;
+      padding: 13px 16px;
+      overflow: hidden;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--border);
+      opacity: 1;
+      transition:
+        max-height 0.25s ease,
+        opacity 0.25s ease,
+        padding 0.25s ease;
+    }
+
+    .controls.hidden {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .control {
+      flex: 1 1 165px;
+      min-width: 150px;
+    }
+
+    .checkbox-control,
+    .button-control {
+      flex: 0 1 auto;
+      min-width: auto;
+    }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+
+    output {
+      color: var(--accent);
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      display: block;
+      width: 100%;
+      height: 5px;
+      margin-top: 4px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .checkbox {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 6px;
+      margin: 0;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .checkbox input {
+      accent-color: var(--accent);
+    }
+
+    .reset-btn {
+      padding: 7px 14px;
+      color: #ffffff;
+      background: var(--accent);
+      border: 0;
+    }
+
+    .reset-btn:hover {
+      background: #c2410c;
+    }
+
+    .workspace {
+      position: relative;
+      width: 100%;
+      height: 700px;
+      background: #f8fafc;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 700px) {
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toggle-btn {
+        width: 100%;
+      }
+
+      .workspace {
+        height: 560px;
+      }
+
+      .control {
+        flex-basis: 100%;
+      }
+
+      .checkbox-control,
+      .button-control {
+        flex-basis: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <div class="header-text">
+        <h1>TBG Perspective Box Simulator</h1>
+        <p>
+          Adjust the position, size, depth, rotation, and tilt of the box.
+        </p>
+      </div>
+
+      <button id="toggleSidebar" class="toggle-btn">
+        👁 Hide Controls
+      </button>
+    </header>
+
+    <div id="controls" class="controls">
+      <div class="control">
+        <label for="pos">
+          Y Position
+          <output id="posVal">60 px below</output>
+        </label>
+        <input id="pos" type="range" min="-180" max="180" value="60" />
+      </div>
+
+      <div class="control">
+        <label for="rot">
+          Box Angle Balance
+          <output id="rotVal">0°</output>
+        </label>
+        <input id="rot" type="range" min="-45" max="45" value="0" />
+      </div>
+
+      <div class="control">
+        <label for="tilt">
+          Horizon Tilt Angle
+          <output id="tiltVal">-15°</output>
+        </label>
+        <input id="tilt" type="range" min="-45" max="45" value="-15" />
+      </div>
+
+      <div class="control">
+        <label for="width">
+          Box Scale
+          <output id="widthVal">180 px</output>
+        </label>
+        <input id="width" type="range" min="60" max="320" value="180" />
+      </div>
+
+      <div class="control" style="display:none;">
+        <!-- Hidden input retained to keep JS references intact -->
+        <label for="height">
+          Box Height
+          <output id="heightVal">180 px</output>
+        </label>
+        <input id="height" type="range" min="40" max="260" value="180" />
+      </div>
+
+      <div class="control">
+        <label for="depth">
+          Box Depth Base
+          <output id="depthVal">55%</output>
+        </label>
+        <input id="depth" type="range" min="20" max="70" value="55" />
+      </div>
+
+      <div class="control checkbox-control">
+        <label class="checkbox">
+          <input id="showGuides" type="checkbox" checked />
+          Show guide lines to VPs
+        </label>
+      </div>
+
+      <div class="control button-control">
+        <button id="resetButton" class="reset-btn">
+          Reset View
+        </button>
+      </div>
+    </div>
+
+    <section class="workspace">
+      <canvas id="canvas"></canvas>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const controls = document.getElementById("controls");
+    const toggleSidebar = document.getElementById("toggleSidebar");
+
+    const pos = document.getElementById("pos");
+    const rot = document.getElementById("rot");
+    const tilt = document.getElementById("tilt");
+
+    const boxWidth = document.getElementById("width");
+    const boxHeight = document.getElementById("height");
+    const boxDepth = document.getElementById("depth");
+
+    const posVal = document.getElementById("posVal");
+    const rotVal = document.getElementById("rotVal");
+    const tiltVal = document.getElementById("tiltVal");
+
+    const widthVal = document.getElementById("widthVal");
+    const heightVal = document.getElementById("heightVal");
+    const depthVal = document.getElementById("depthVal");
+
+    const showGuides = document.getElementById("showGuides");
+    const resetButton = document.getElementById("resetButton");
+
+    let canvasWidth = 0;
+    let canvasHeight = 0;
+
+    toggleSidebar.addEventListener("click", () => {
+      controls.classList.toggle("hidden");
+
+      toggleSidebar.textContent = controls.classList.contains("hidden")
+        ? "⚙️ Show Controls"
+        : "👁 Hide Controls";
+
+      setTimeout(resizeCanvas, 260);
+    });
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      canvasWidth = rect.width || 1200;
+      canvasHeight = rect.height || 700;
+
+      canvas.width = Math.round(canvasWidth * dpr);
+      canvas.height = Math.round(canvasHeight * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      draw();
+    }
+
+    function rotatePoint(point, origin, angle) {
+      const dx = point.x - origin.x;
+      const dy = point.y - origin.y;
+
+      return {
+        x: origin.x + dx * Math.cos(angle) - dy * Math.sin(angle),
+        y: origin.y + dx * Math.sin(angle) + dy * Math.cos(angle)
+      };
+    }
+
+    function lineIntersection(p1, p2, p3, p4) {
+      const denominator =
+        (p4.y - p3.y) * (p2.x - p1.x) -
+        (p4.x - p3.x) * (p2.y - p1.y);
+
+      if (Math.abs(denominator) < 0.00001) {
+        return {
+          x: (p1.x + p2.x) / 2,
+          y: (p1.y + p2.y) / 2
+        };
+      }
+
+      const ua =
+        ((p4.x - p3.x) * (p1.y - p3.y) -
+          (p4.y - p3.y) * (p1.x - p3.x)) /
+        denominator;
+
+      return {
+        x: p1.x + ua * (p2.x - p1.x),
+        y: p1.y + ua * (p2.y - p1.y)
+      };
+    }
+
+    function drawLine(
+      p1,
+      p2,
+      color = "#172033",
+      lineWidth = 1.5,
+      dashed = false
+    ) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash(dashed ? [5, 4] : []);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawExtendedLine(
+      p1,
+      p2,
+      color = "#172033",
+      lineWidth = 1.5,
+      dashed = false
+    ) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const length = Math.hypot(dx, dy);
+
+      if (length < 0.001) return;
+
+      const ux = dx / length;
+      const uy = dy / length;
+      const extension = 2500;
+
+      drawLine(
+        {
+          x: p1.x - ux * extension,
+          y: p1.y - uy * extension
+        },
+        {
+          x: p2.x + ux * extension,
+          y: p2.y + uy * extension
+        },
+        color,
+        lineWidth,
+        dashed
+      );
+    }
+
+    function drawPolygon(
+      points,
+      fillColor,
+      strokeColor = "#172033",
+      lineWidth = 2
+    ) {
+      if (points.length < 3) return;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+
+      ctx.closePath();
+      ctx.fillStyle = fillColor;
+      ctx.fill();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = lineWidth;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawVPDot(point, color = "#ea580c") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawLabel(
+      text,
+      x,
+      y,
+      color = "#172033",
+      align = "center"
+    ) {
+      ctx.save();
+      ctx.font = "600 11px Arial";
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+
+      const textWidth = ctx.measureText(text).width;
+      const padding = 4;
+
+      let backgroundX = x - padding;
+
+      if (align === "center") {
+        backgroundX = x - textWidth / 2 - padding;
+      }
+
+      if (align === "right") {
+        backgroundX = x - textWidth - padding;
+      }
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+      ctx.fillRect(
+        backgroundX,
+        y - 7 - padding,
+        textWidth + padding * 2,
+        14 + padding * 2
+      );
+
+      ctx.fillStyle = color;
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function renderBox(centerX, topY, horizonY) {
+      const tiltRadians = Number(tilt.value) * Math.PI / 180;
+      const rotationDegrees = Number(rot.value);
+
+      const width = Number(boxWidth.value);
+      // The leading vertical edge height
+      const height = width; 
+
+      // Depth base multiplier based on slider value
+      const depthFactor = Number(boxDepth.value) / 55;
+      const t_base = Math.min(0.9, (width / 400) * depthFactor);
+      
+      const t_left = t_base;
+      const t_right = t_base;
+
+      const verticalAngle = tiltRadians + Math.PI / 2;
+      const vpDistance = 430;
+      const rotationOffset = rotationDegrees * 5;
+
+      const horizonCenter = {
+        x: centerX - rotationOffset,
+        y: horizonY
+      };
+
+      const leftBaseVP = {
+        x: horizonCenter.x - vpDistance,
+        y: horizonCenter.y
+      };
+
+      const rightBaseVP = {
+        x: horizonCenter.x + vpDistance,
+        y: horizonCenter.y
+      };
+
+      const vpLeft = rotatePoint(leftBaseVP, horizonCenter, tiltRadians);
+      const vpRight = rotatePoint(rightBaseVP, horizonCenter, tiltRadians);
+
+      /* 1. Front Vertical Edge (A = Top, B = Bottom) */
+      const A = { x: centerX, y: topY };
+      const B = {
+        x: A.x + height * Math.cos(verticalAngle),
+        y: A.y + height * Math.sin(verticalAngle)
+      };
+
+      /* 2. Left Edge Receding (C = Top, D = Bottom) */
+      const C = {
+        x: A.x + (vpLeft.x - A.x) * t_left,
+        y: A.y + (vpLeft.y - A.y) * t_left
+      };
+      const D = {
+        x: B.x + (vpLeft.x - B.x) * t_left,
+        y: B.y + (vpLeft.y - B.y) * t_left
+      };
+
+      /* 3. Right Edge Receding (E = Top, F = Bottom) */
+      const E = {
+        x: A.x + (vpRight.x - A.x) * t_right,
+        y: A.y + (vpRight.y - A.y) * t_right
+      };
+      const F = {
+        x: B.x + (vpRight.x - B.x) * t_right,
+        y: B.y + (vpRight.y - B.y) * t_right
+      };
+
+      /* 4. Back Corners (G = Top, H = Bottom) */
+      const G = lineIntersection(C, vpRight, E, vpLeft);
+      const H = lineIntersection(D, vpRight, F, vpLeft);
+
+      /* View visibility logic utilizing the cross-product against the tilted horizon line */
+      const isTopVisible = (vpRight.x - vpLeft.x) * (A.y - vpLeft.y) - (vpRight.y - vpLeft.y) * (A.x - vpLeft.x) > 0;
+      const isBottomVisible = (vpRight.x - vpLeft.x) * (B.y - vpLeft.y) - (vpRight.y - vpLeft.y) * (B.x - vpLeft.x) < 0;
+
+      if (showGuides.checked) {
+        drawExtendedLine(vpLeft, vpRight, "#ea580c", 1.5, true);
+
+        // Guidelines to Left VP
+        drawLine(A, vpLeft, "#fdba74", 1.1, true);
+        drawLine(B, vpLeft, "#fdba74", 1.1, true);
+        
+        // Guidelines to Right VP
+        drawLine(A, vpRight, "#fdba74", 1.1, true);
+        drawLine(B, vpRight, "#fdba74", 1.1, true);
+
+        // Guide lines for the back corners if visible
+        if (isTopVisible) {
+          drawLine(C, vpRight, "#fdba74", 1.1, true);
+          drawLine(E, vpLeft, "#fdba74", 1.1, true);
+        }
+        if (isBottomVisible) {
+          drawLine(D, vpRight, "#fdba74", 1.1, true);
+          drawLine(F, vpLeft, "#fdba74", 1.1, true);
+        }
+      }
+
+      const colors = {
+        left: "#fb923c",
+        right: "#c2410c",
+        top: "#fed7aa",
+        bottom: "#7c2d12",
+        stroke: "#431407"
+      };
+
+      /* Draw the left and right perspective faces */
+      drawPolygon([A, C, D, B], colors.left, colors.stroke, 2);
+      drawPolygon([A, E, F, B], colors.right, colors.stroke, 2);
+
+      /* Draw the top or bottom face intersecting over the sides */
+      if (isTopVisible) {
+        drawPolygon([A, E, G, C], colors.top, colors.stroke, 2);
+      } else if (isBottomVisible) {
+        drawPolygon([B, F, H, D], colors.bottom, colors.stroke, 2);
+      }
+
+      /* Re-stroke shared front wireframe edges to guarantee a clean appearance */
+      drawLine(A, B, colors.stroke, 2);
+      drawLine(A, C, colors.stroke, 2);
+      drawLine(A, E, colors.stroke, 2);
+      drawLine(B, D, colors.stroke, 2);
+      drawLine(B, F, colors.stroke, 2);
+
+      return { vpLeft, vpRight };
+    }
+
+    function draw() {
+      if (!canvasWidth || !canvasHeight) return;
+
+      const centerX = canvasWidth / 2;
+      const horizonY = canvasHeight * 0.5;
+      const topY = horizonY + Number(pos.value);
+
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      drawLine(
+        { x: 0, y: horizonY },
+        { x: canvasWidth, y: horizonY },
+        "#64748b",
+        2
+      );
+
+      drawLabel(
+        "CAMERA HORIZON / EYE LEVEL",
+        centerX,
+        horizonY - 14,
+        "#475569"
+      );
+
+      const result = renderBox(centerX, topY, horizonY);
+
+      drawVPDot(result.vpLeft, "#ea580c");
+      drawVPDot(result.vpRight, "#ea580c");
+    }
+
+    function updateLabels() {
+      const position = Number(pos.value);
+
+      posVal.textContent =
+        position === 0
+          ? "on eye level"
+          : `${Math.abs(position)} px ${
+              position < 0 ? "above" : "below"
+            }`;
+
+      rotVal.textContent = `${rot.value}°`;
+      tiltVal.textContent = `${tilt.value}°`;
+
+      widthVal.textContent = `${boxWidth.value} px`;
+      heightVal.textContent = `${boxWidth.value} px`;
+      depthVal.textContent = `${boxDepth.value}%`;
+    }
+
+    function update() {
+      updateLabels();
+      draw();
+    }
+
+    boxWidth.addEventListener("input", () => {
+      boxHeight.value = boxWidth.value;
+      update();
+    });
+
+    boxHeight.addEventListener("input", () => {
+      boxWidth.value = boxHeight.value;
+      update();
+    });
+
+    [
+      pos,
+      rot,
+      tilt,
+      boxDepth
+    ].forEach(input => {
+      input.addEventListener("input", update);
+    });
+
+    showGuides.addEventListener("change", draw);
+
+    resetButton.addEventListener("click", () => {
+      pos.value = 60;
+      rot.value = 0;
+      tilt.value = -15;
+
+      boxWidth.value = 180;
+      boxHeight.value = 180;
+      boxDepth.value = 55;
+
+      update();
+    });
+
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+    });
+
+    resizeObserver.observe(canvas.parentElement);
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("load", resizeCanvas);
+
+    updateLabels();
+    resizeCanvas();
+  </script>
+</body>
+</html>
